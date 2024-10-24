@@ -11,3 +11,5 @@ test/
 output*.png
 models*
 *.log
+*.png
+*.mp4
