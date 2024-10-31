@@ -175,11 +175,11 @@ public:
     std::vector<float> zeros_right;
 
 public:
-    PhotoMakerIDEncoder(ggml_backend_t backend, ggml_type wtype, SDVersion version = VERSION_SDXL, float sty = 20.f)
-        : GGMLRunner(backend, wtype),
+    PhotoMakerIDEncoder(ggml_backend_t backend, std::map<std::string, enum ggml_type>& tensor_types, const std::string prefix, SDVersion version = VERSION_SDXL, float sty = 20.f)
+        : GGMLRunner(backend),
           version(version),
           style_strength(sty) {
-        id_encoder.init(params_ctx, wtype);
+        id_encoder.init(params_ctx, tensor_types, prefix);
     }
 
     std::string get_desc() {

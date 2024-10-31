@@ -917,7 +917,7 @@ int main(int argc, const char* argv[]) {
                               params.style_ratio,
                               params.normalize_input,
                               params.input_id_images_path.c_str(),
-                              *step_callback);
+                              (step_callback_t)step_callback);
 
             if (results == NULL) {
                 printf("generate failed\n");

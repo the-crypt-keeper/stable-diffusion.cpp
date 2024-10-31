@@ -771,10 +771,11 @@ void step_callback(int step, struct ggml_tensor* latents, enum SDVersion version
 
     const float(*latent_rgb_proj)[channel];
 
+
     if (dim == 16) {
         // 16 channels VAE -> Flux or SD3
 
-        if (version == VERSION_SD3_2B || version == VERSION_SD3_5_8B /* || version == VERSION_SD3_5_2B*/) {
+        if (version == VERSION_SD3_2B || version == VERSION_SD3_5_8B || version == VERSION_SD3_5_2B) {
             latent_rgb_proj = sd3_latent_rgb_proj;
         } else if (version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL) {
             latent_rgb_proj = flux_latent_rgb_proj;
@@ -1064,8 +1065,7 @@ int main(int argc, const char* argv[]) {
     int upscale_factor = 4;  // unused for RealESRGAN_x4plus_anime_6B.pth
     if (params.esrgan_path.size() > 0 && params.upscale_repeats > 0) {
         upscaler_ctx_t* upscaler_ctx = new_upscaler_ctx(params.esrgan_path.c_str(),
-                                                        params.n_threads,
-                                                        params.wtype);
+                                                        params.n_threads);
 
         if (upscaler_ctx == NULL) {
             printf("new_upscaler_ctx failed\n");
