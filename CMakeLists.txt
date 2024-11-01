@@ -3,7 +3,10 @@ project("stable-diffusion")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_compile_options(/w)
+# Suppress warnings for Vulkan
+if (MSVC AND SD_VULKAN)
+    add_compile_options(/w)
+endif()
 
 if (NOT XCODE AND NOT MSVC AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
