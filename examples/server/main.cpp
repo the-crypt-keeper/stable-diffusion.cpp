@@ -106,6 +106,11 @@ struct SDParams {
     // Photomaker params
     std::string input_id_images_path;
 
+    std::vector<int> skip_layers = {7, 8, 9};
+    float slg_scale              = 2.5;
+    float skip_layer_start       = 0.01;
+    float skip_layer_end         = 0.2;
+
     // server things
     int port         = 8080;
     std::string host = "127.0.0.1";
@@ -169,6 +174,11 @@ void print_usage(int argc, const char* argv[]) {
     printf("  -p, --prompt [PROMPT]              the prompt to render\n");
     printf("  -n, --negative-prompt PROMPT       the negative prompt (default: \"\")\n");
     printf("  --cfg-scale SCALE                  unconditional guidance scale: (default: 7.0)\n");
+    printf("  --slg                              enable skip layer guidance (CFG variant)\n");
+    printf("  --skip_layers LAYERS               Layers to skip for skip layer CFG (requires --slg): (default: [7,8,9])\n");
+    printf("  --slg-scale SCALE                  skip layer guidance scale (requires --slg): (default: 2.5)\n");
+    printf("  --skip_layer_start START           skip layer enabling point (* steps) (requires --slg): (default: 0.01)\n");
+    printf("  --skip_layer_end END               skip layer enabling point (* steps) (requires --slg): (default: 0.2)\n");
     printf("  --strength STRENGTH                strength for noising/unnoising (default: 0.75)\n");
     printf("  --style-ratio STYLE-RATIO          strength for keeping input identity (default: 20%%)\n");
     printf("  --control-strength STRENGTH        strength to apply Control Net (default: 0.9)\n");
@@ -195,6 +205,7 @@ void print_usage(int argc, const char* argv[]) {
 
 void parse_args(int argc, const char** argv, SDParams& params) {
     bool invalid_arg = false;
+    bool cfg_skip    = false;
     std::string arg;
     for (int i = 1; i < argc; i++) {
         arg = argv[i];
@@ -420,6 +431,63 @@ void parse_args(int argc, const char** argv, SDParams& params) {
             params.verbose = true;
         } else if (arg == "--color") {
             params.color = true;
+        } else if (arg == "--slg") {
+            cfg_skip = true;
+        } else if (arg == "--skip-layers") {
+            if (++i >= argc) {
+                invalid_arg = true;
+                break;
+            }
+            if (argv[i][0] != '[') {
+                invalid_arg = true;
+                break;
+            }
+            std::string layers_str = argv[i];
+            while (layers_str.back() != ']') {
+                if (++i >= argc) {
+                    invalid_arg = true;
+                    break;
+                }
+                layers_str += " " + std::string(argv[i]);
+            }
+            layers_str = layers_str.substr(1, layers_str.size() - 2);
+
+            std::regex regex("[, ]+");
+            std::sregex_token_iterator iter(layers_str.begin(), layers_str.end(), regex, -1);
+            std::sregex_token_iterator end;
+            std::vector<std::string> tokens(iter, end);
+            std::vector<int> layers;
+            for (const auto& token : tokens) {
+                try {
+                    layers.push_back(std::stoi(token));
+                } catch (const std::invalid_argument& e) {
+                    invalid_arg = true;
+                    break;
+                }
+            }
+            params.skip_layers = layers;
+
+            if (invalid_arg) {
+                break;
+            }
+        } else if (arg == "--slg-scale") {
+            if (++i >= argc) {
+                invalid_arg = true;
+                break;
+            }
+            params.slg_scale = std::stof(argv[i]);
+        } else if (arg == "--skip-layer-start") {
+            if (++i >= argc) {
+                invalid_arg = true;
+                break;
+            }
+            params.skip_layer_start = std::stof(argv[i]);
+        } else if (arg == "--skip-layer-end") {
+            if (++i >= argc) {
+                invalid_arg = true;
+                break;
+            }
+            params.skip_layer_end = std::stof(argv[i]);
         } else if (arg == "--port") {
             if (++i >= argc) {
                 invalid_arg = true;
@@ -445,6 +513,11 @@ void parse_args(int argc, const char** argv, SDParams& params) {
     }
     if (params.n_threads <= 0) {
         params.n_threads = get_num_physical_cores();
+    }
+
+    if (!cfg_skip) {
+        // set skip_layers to empty
+        params.skip_layers.clear();
     }
 
     if (params.mode != CONVERT && params.mode != IMG2VID && params.prompt.length() == 0) {
@@ -917,6 +990,10 @@ int main(int argc, const char* argv[]) {
                               params.style_ratio,
                               params.normalize_input,
                               params.input_id_images_path.c_str(),
+                              params.skip_layers,
+                              params.slg_scale,
+                              params.skip_layer_start,
+                              params.skip_layer_end,
                               (step_callback_t)step_callback);
 
             if (results == NULL) {
