@@ -877,7 +877,7 @@ public:
                 negative_data = (float*)out_uncond->data;
             }
 
-            bool has_skiplayer     = skip_layers.size() > 0;
+            bool has_skiplayer     = skip_layers.size() > 0 && slg_scale != 0.0;
             int stepCount          = sigmas.size();
             has_skiplayer          = has_skiplayer && step > (int)(skip_layer_start * stepCount) && step < (int)(skip_layer_end * stepCount);
             float* skip_layer_data = NULL;
