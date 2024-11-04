@@ -778,6 +778,12 @@ void parseJsonPrompt(std::string json_str, SDParams* params) {
         params->input_id_images_path = input_id_images_path;
     } catch (...) {
     }
+    try {
+        std::string slg_scale = payload["slg_scale"];
+        params->slg_scale = stof(slg_scale);
+    } catch (...) {
+    }
+    // TODO: more slg settings (layers, start and end)
 }
 
 // https://github.com/comfyanonymous/ComfyUI/blob/master/comfy/latent_formats.py#L152-L169
