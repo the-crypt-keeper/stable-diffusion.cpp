@@ -780,10 +780,30 @@ void parseJsonPrompt(std::string json_str, SDParams* params) {
     }
     try {
         std::string slg_scale = payload["slg_scale"];
-        params->slg_scale = stof(slg_scale);
+        params->slg_scale     = stof(slg_scale);
     } catch (...) {
     }
     // TODO: more slg settings (layers, start and end)
+    try {
+        std::vector<int> skip_layers = payload["skip_layers"].get<std::vector<int>>();
+        params->skip_layers.clear();
+        for (int i = 0; i < skip_layers.size(); i++) {
+            params->skip_layers.push_back(skip_layers[i]);
+        }
+    } catch (...) {
+    }
+    try {
+        // skip_layer_start
+        float skip_layer_start   = payload["skip_layer_start"].get<float>();
+        params->skip_layer_start = skip_layer_start;
+    } catch (...) {
+    }
+    try {
+        // skip_layer_end
+        float skip_layer_end   = payload["skip_layer_end"].get<float>();
+        params->skip_layer_end = skip_layer_end;
+    } catch (...) {
+    }
 }
 
 // https://github.com/comfyanonymous/ComfyUI/blob/master/comfy/latent_formats.py#L152-L169
