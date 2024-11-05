@@ -779,6 +779,17 @@ public:
                         float skip_layer_start                                          = 0.01,
                         float skip_layer_end                                            = 0.2,
                         std::function<void(int, ggml_tensor*, SDVersion)> step_callback = nullptr) {
+        struct ggml_init_params params;
+        size_t data_size = ggml_row_size(init_latent->type, init_latent->ne[0]);
+        for (int i = 1; i < 4; i++) {
+            data_size *= init_latent->ne[i];
+        }
+        data_size += 1024;
+        params.mem_size       = data_size * 5;
+        params.mem_buffer     = NULL;
+        params.no_alloc       = false;
+        ggml_context* tmp_ctx = ggml_init(params);
+
         size_t steps = sigmas.size() - 1;
         // noise = load_tensor_from_file(work_ctx, "./rand0.bin");
         // print_ggml_tensor(noise);
@@ -786,24 +797,23 @@ public:
         copy_ggml_tensor(x, init_latent);
         x = denoiser->noise_scaling(sigmas[0], noise, x);
 
-        struct ggml_tensor* noised_input = ggml_dup_tensor(work_ctx, noise);
+        struct ggml_tensor* noised_input = ggml_dup_tensor(tmp_ctx, noise);
 
         bool has_unconditioned = cfg_scale != 1.0 && uncond.c_crossattn != NULL;
         bool has_skiplayer     = slg_scale != 0.0 && skip_layers.size() > 0;
 
-
         // denoise wrapper
-        struct ggml_tensor* out_cond   = ggml_dup_tensor(work_ctx, x);
+        struct ggml_tensor* out_cond   = ggml_dup_tensor(tmp_ctx, x);
         struct ggml_tensor* out_uncond = NULL;
-        struct ggml_tensor* out_skip = NULL;
+        struct ggml_tensor* out_skip   = NULL;
 
         if (has_unconditioned) {
-            out_uncond = ggml_dup_tensor(work_ctx, x);
+            out_uncond = ggml_dup_tensor(tmp_ctx, x);
         }
         if (has_skiplayer) {
-            out_skip = ggml_dup_tensor(work_ctx, x);
+            out_skip = ggml_dup_tensor(tmp_ctx, x);
         }
-        struct ggml_tensor* denoised = ggml_dup_tensor(work_ctx, x);
+        struct ggml_tensor* denoised = ggml_dup_tensor(tmp_ctx, x);
 
         auto denoise = [&](ggml_tensor* input, float sigma, int step) -> ggml_tensor* {
             if (step == 1) {
@@ -948,6 +958,7 @@ public:
             control_net->free_compute_buffer();
         }
         diffusion_model->free_compute_buffer();
+        ggml_free(tmp_ctx);
         return x;
     }
 
@@ -1373,6 +1384,7 @@ sd_image_t* generate_image(sd_ctx_t* sd_ctx,
                                                      skip_layer_start,
                                                      skip_layer_end,
                                                      step_callback);
+
         // struct ggml_tensor* x_0 = load_tensor_from_file(ctx, "samples_ddim.bin");
         // print_ggml_tensor(x_0);
         int64_t sampling_end = ggml_time_ms();
