@@ -853,7 +853,7 @@ void step_callback(int step, struct ggml_tensor* latents, enum SDVersion version
 
         if (version == VERSION_SD3_2B || version == VERSION_SD3_5_8B || version == VERSION_SD3_5_2B) {
             latent_rgb_proj = sd3_latent_rgb_proj;
-        } else if (version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL) {
+        } else if (version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL|| version == VERSION_FLUX_LITE) {
             latent_rgb_proj = flux_latent_rgb_proj;
         } else {
             // unknown model

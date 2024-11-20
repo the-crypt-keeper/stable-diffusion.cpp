@@ -33,7 +33,8 @@ const char* model_version_to_str[] = {
     "Flux Dev",
     "Flux Schnell",
     "SD3.5 8B",
-    "SD3.5 2B"};
+    "SD3.5 2B",
+    "Flux Lite 8B"};
 
 const char* sampling_methods_str[] = {
     "Euler A",
@@ -291,7 +292,7 @@ public:
             }
         } else if (version == VERSION_SD3_2B || version == VERSION_SD3_5_8B || version == VERSION_SD3_5_2B) {
             scale_factor = 1.5305f;
-        } else if (version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL) {
+        } else if (version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL || version == VERSION_FLUX_LITE) {
             scale_factor = 0.3611;
             // TODO: shift_factor
         }
@@ -312,7 +313,7 @@ public:
         } else {
             clip_backend   = backend;
             bool use_t5xxl = false;
-            if (version == VERSION_SD3_2B || version == VERSION_SD3_5_8B || version == VERSION_SD3_5_2B || version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL) {
+            if (version == VERSION_SD3_2B || version == VERSION_SD3_5_8B || version == VERSION_SD3_5_2B || version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL || version == VERSION_FLUX_LITE) {
                 use_t5xxl = true;
             }
             if (!ggml_backend_is_cpu(backend) && use_t5xxl && conditioner_wtype != GGML_TYPE_F32) {
@@ -326,7 +327,7 @@ public:
             if (version == VERSION_SD3_2B || version == VERSION_SD3_5_8B || version == VERSION_SD3_5_2B) {
                 cond_stage_model = std::make_shared<SD3CLIPEmbedder>(clip_backend, model_loader.tensor_storages_types);
                 diffusion_model  = std::make_shared<MMDiTModel>(backend, model_loader.tensor_storages_types, version);
-            } else if (version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL) {
+            } else if (version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL || version == VERSION_FLUX_LITE) {
                 cond_stage_model = std::make_shared<FluxCLIPEmbedder>(clip_backend, model_loader.tensor_storages_types);
                 diffusion_model  = std::make_shared<FluxModel>(backend, model_loader.tensor_storages_types, version);
             } else {
@@ -525,7 +526,7 @@ public:
         if (version == VERSION_SD3_2B || version == VERSION_SD3_5_8B || version == VERSION_SD3_5_2B) {
             LOG_INFO("running in FLOW mode");
             denoiser = std::make_shared<DiscreteFlowDenoiser>();
-        } else if (version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL) {
+        } else if (version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL || version == VERSION_FLUX_LITE) {
             LOG_INFO("running in Flux FLOW mode");
             float shift = 1.15f;
             if (version == VERSION_FLUX_SCHNELL) {
@@ -811,7 +812,7 @@ public:
             out_uncond = ggml_dup_tensor(tmp_ctx, x);
         }
         if (has_skiplayer) {
-            if (version == VERSION_SD3_2B || version == VERSION_SD3_5_2B || version == VERSION_SD3_5_8B || version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL) {
+            if (version == VERSION_SD3_2B || version == VERSION_SD3_5_2B || version == VERSION_SD3_5_8B || version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL || version == VERSION_FLUX_LITE) {
                 out_skip = ggml_dup_tensor(tmp_ctx, x);
             } else {
                 has_skiplayer = false;
@@ -1008,7 +1009,7 @@ public:
         } else {
             if (version == VERSION_SD3_2B || version == VERSION_SD3_5_8B || version == VERSION_SD3_5_2B) {
                 C = 32;
-            } else if (version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL) {
+            } else if (version == VERSION_FLUX_DEV || version == VERSION_FLUX_SCHNELL || version == VERSION_FLUX_LITE) {
                 C = 32;
             }
         }
@@ -1346,7 +1347,7 @@ sd_image_t* generate_image(sd_ctx_t* sd_ctx,
     int C = 4;
     if (sd_ctx->sd->version == VERSION_SD3_2B || sd_ctx->sd->version == VERSION_SD3_5_8B || sd_ctx->sd->version == VERSION_SD3_5_2B) {
         C = 16;
-    } else if (sd_ctx->sd->version == VERSION_FLUX_DEV || sd_ctx->sd->version == VERSION_FLUX_SCHNELL) {
+    } else if (sd_ctx->sd->version == VERSION_FLUX_DEV || sd_ctx->sd->version == VERSION_FLUX_SCHNELL || sd_ctx->sd->version == VERSION_FLUX_LITE) {
         C = 16;
     }
     int W = width / 8;
@@ -1471,7 +1472,7 @@ sd_image_t* txt2img(sd_ctx_t* sd_ctx,
     if (sd_ctx->sd->version == VERSION_SD3_2B || sd_ctx->sd->version == VERSION_SD3_5_8B || sd_ctx->sd->version == VERSION_SD3_5_2B) {
         params.mem_size *= 3;
     }
-    if (sd_ctx->sd->version == VERSION_FLUX_DEV || sd_ctx->sd->version == VERSION_FLUX_SCHNELL) {
+    if (sd_ctx->sd->version == VERSION_FLUX_DEV || sd_ctx->sd->version == VERSION_FLUX_SCHNELL || sd_ctx->sd->version == VERSION_FLUX_LITE) {
         params.mem_size *= 4;
     }
     if (sd_ctx->sd->stacked_id) {
@@ -1496,7 +1497,7 @@ sd_image_t* txt2img(sd_ctx_t* sd_ctx,
     int C = 4;
     if (sd_ctx->sd->version == VERSION_SD3_2B || sd_ctx->sd->version == VERSION_SD3_5_8B || sd_ctx->sd->version == VERSION_SD3_5_2B) {
         C = 16;
-    } else if (sd_ctx->sd->version == VERSION_FLUX_DEV || sd_ctx->sd->version == VERSION_FLUX_SCHNELL) {
+    } else if (sd_ctx->sd->version == VERSION_FLUX_DEV || sd_ctx->sd->version == VERSION_FLUX_SCHNELL || sd_ctx->sd->version == VERSION_FLUX_LITE) {
         C = 16;
     }
     int W                    = width / 8;
@@ -1504,7 +1505,7 @@ sd_image_t* txt2img(sd_ctx_t* sd_ctx,
     ggml_tensor* init_latent = ggml_new_tensor_4d(work_ctx, GGML_TYPE_F32, W, H, C, 1);
     if (sd_ctx->sd->version == VERSION_SD3_2B || sd_ctx->sd->version == VERSION_SD3_5_8B || sd_ctx->sd->version == VERSION_SD3_5_2B) {
         ggml_set_f32(init_latent, 0.0609f);
-    } else if (sd_ctx->sd->version == VERSION_FLUX_DEV || sd_ctx->sd->version == VERSION_FLUX_SCHNELL) {
+    } else if (sd_ctx->sd->version == VERSION_FLUX_DEV || sd_ctx->sd->version == VERSION_FLUX_SCHNELL || sd_ctx->sd->version == VERSION_FLUX_LITE) {
         ggml_set_f32(init_latent, 0.1159f);
     } else {
         ggml_set_f32(init_latent, 0.f);
@@ -1575,7 +1576,7 @@ sd_image_t* img2img(sd_ctx_t* sd_ctx,
     if (sd_ctx->sd->version == VERSION_SD3_2B || sd_ctx->sd->version == VERSION_SD3_5_8B || sd_ctx->sd->version == VERSION_SD3_5_2B) {
         params.mem_size *= 2;
     }
-    if (sd_ctx->sd->version == VERSION_FLUX_DEV || sd_ctx->sd->version == VERSION_FLUX_SCHNELL) {
+    if (sd_ctx->sd->version == VERSION_FLUX_DEV || sd_ctx->sd->version == VERSION_FLUX_SCHNELL || sd_ctx->sd->version == VERSION_FLUX_LITE) {
         params.mem_size *= 3;
     }
     if (sd_ctx->sd->stacked_id) {

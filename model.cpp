@@ -1393,14 +1393,19 @@ bool ModelLoader::init_from_ckpt_file(const std::string& file_path, const std::s
 
 SDVersion ModelLoader::get_sd_version() {
     TensorStorage token_embedding_weight;
-    bool is_flux = false;
-    bool is_sd3  = false;
+    bool is_flux    = false;
+    bool is_schnell = true;
+    bool is_lite    = true;
+    bool is_sd3     = false;
     for (auto& tensor_storage : tensor_storages) {
         if (tensor_storage.name.find("model.diffusion_model.guidance_in.in_layer.weight") != std::string::npos) {
-            return VERSION_FLUX_DEV;
+            is_schnell = false;
         }
         if (tensor_storage.name.find("model.diffusion_model.double_blocks.") != std::string::npos) {
             is_flux = true;
+        }
+        if (tensor_storage.name.find("model.diffusion_model.double_blocks.8") != std::string::npos) {
+            is_lite = false;
         }
         if (tensor_storage.name.find("joint_blocks.0.x_block.attn2.ln_q.weight") != std::string::npos) {
             return VERSION_SD3_5_2B;
@@ -1432,7 +1437,14 @@ SDVersion ModelLoader::get_sd_version() {
         }
     }
     if (is_flux) {
-        return VERSION_FLUX_SCHNELL;
+        if (is_schnell) {
+            GGML_ASSERT(!is_lite);
+            return VERSION_FLUX_SCHNELL;
+        } else if (is_lite) {
+            return VERSION_FLUX_LITE;
+        } else {
+            return VERSION_FLUX_DEV;
+        }
     }
     if (is_sd3) {
         return VERSION_SD3_2B;
@@ -1856,7 +1868,21 @@ bool ModelLoader::save_to_gguf_file(const std::string& file_path, ggml_type type
         const std::string& name = tensor_storage.name;
 
         ggml_type tensor_type = tensor_storage.type;
-        tensor_set_type(tensor_type, tensor_storage, type, fallback_type);
+        auto _type            = type;
+        // attemmpt to improve q2_k quant by using higher quants for final blocks
+        if (type == GGML_TYPE_Q2_K) {
+            if (name.find("single_blocks.37") != std::string::npos ||
+                name.find("double_blocks.0") != std::string::npos) {
+                _type = GGML_TYPE_Q4_K;
+            } else if (name.find("single_blocks.36") != std::string::npos ||
+                       name.find("single_blocks.35") != std::string::npos ||
+                       name.find("single_blocks.0") != std::string::npos ||
+                       name.find("double_blocks.18") != std::string::npos ||
+                       name.find("double_blocks.1") != std::string::npos) {
+                _type = GGML_TYPE_Q3_K;
+            }
+        }
+        tensor_set_type(tensor_type, tensor_storage, _type, fallback_type);
 
         ggml_tensor* tensor = ggml_new_tensor(ggml_ctx, tensor_type, tensor_storage.n_dims, tensor_storage.ne);
         if (tensor == NULL) {
@@ -1890,7 +1916,8 @@ bool ModelLoader::save_to_gguf_file(const std::string& file_path, ggml_type type
     return success;
 }
 
-int64_t ModelLoader::get_params_mem_size(ggml_backend_t backend, ggml_type type, ggml_type fallback_type /*= GGML_TYPE_COUNT*/) {
+int64_t
+ModelLoader::get_params_mem_size(ggml_backend_t backend, ggml_type type, ggml_type fallback_type /*= GGML_TYPE_COUNT*/) {
     size_t alignment = 128;
     if (backend != NULL) {
         alignment = ggml_backend_get_alignment(backend);
@@ -1905,7 +1932,22 @@ int64_t ModelLoader::get_params_mem_size(ggml_backend_t backend, ggml_type type,
     }
 
     for (auto& tensor_storage : processed_tensor_storages) {
-        tensor_set_type(tensor_storage.type, tensor_storage, type, fallback_type);
+        auto _type = type;
+        auto name  = tensor_storage.name;
+        // attemmpt to improve q2_k quant by using higher quants for final blocks
+        if (type == GGML_TYPE_Q2_K) {
+            if (name.find("single_blocks.37") != std::string::npos ||
+                name.find("double_blocks.0") != std::string::npos) {
+                _type = GGML_TYPE_Q4_K;
+            } else if (name.find("single_blocks.36") != std::string::npos ||
+                       name.find("single_blocks.35") != std::string::npos ||
+                       name.find("single_blocks.0") != std::string::npos ||
+                       name.find("double_blocks.18") != std::string::npos ||
+                       name.find("double_blocks.1") != std::string::npos) {
+                _type = GGML_TYPE_Q3_K;
+            }
+        }
+        tensor_set_type(tensor_storage.type, tensor_storage, _type, fallback_type);
         mem_size += tensor_storage.nbytes() + alignment;
     }
 
