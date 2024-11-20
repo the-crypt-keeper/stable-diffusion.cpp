@@ -765,14 +765,14 @@ void parseJsonPrompt(std::string json_str, SDParams& params) {
         float control_strength = payload["control_strength"];
         // params.control_strength = control_strength;
         // LOG_WARN("control_strength is not supported yet\n");
-        sd_log(sd_log_level_t::SD_LOG_WARN, "control_strength is not supported yet\n", params);
+        sd_log(sd_log_level_t::SD_LOG_WARN, "control_strength is not supported yet\n");
     } catch (...) {
     }
     try {
         float style_strength = payload["style_strength"];
         // params.style_strength = style_strength;
         // LOG_WARN("style_strength is not supported yet\n");
-        sd_log(sd_log_level_t::SD_LOG_WARN, "style_strength is not supported yet\n", params);
+        sd_log(sd_log_level_t::SD_LOG_WARN, "style_strength is not supported yet\n");
     } catch (...) {
     }
     try {
