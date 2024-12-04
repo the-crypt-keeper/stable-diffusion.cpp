@@ -94,6 +94,7 @@ struct SDParams {
     std::string lora_model_dir;
     std::string output_path = "output.png";
     std::string input_path;
+    std::string mask_path;
     std::string control_image_path;
 
     std::string prompt;
@@ -162,6 +163,7 @@ void print_params(SDParams params) {
     printf("    normalize input image :  %s\n", params.normalize_input ? "true" : "false");
     printf("    output_path:       %s\n", params.output_path.c_str());
     printf("    init_img:          %s\n", params.input_path.c_str());
+    printf("    mask_img:          %s\n", params.mask_path.c_str());
     printf("    control_image:     %s\n", params.control_image_path.c_str());
     printf("    clip on cpu:       %s\n", params.clip_on_cpu ? "true" : "false");
     printf("    controlnet cpu:    %s\n", params.control_net_cpu ? "true" : "false");
@@ -405,6 +407,12 @@ void parse_args(int argc, const char** argv, SDParams& params) {
                 break;
             }
             params.input_path = argv[i];
+        } else if (arg == "--mask") {
+            if (++i >= argc) {
+                invalid_arg = true;
+                break;
+            }
+            params.mask_path = argv[i];
         } else if (arg == "--control-image") {
             if (++i >= argc) {
                 invalid_arg = true;
@@ -862,6 +870,8 @@ int main(int argc, const char* argv[]) {
     bool vae_decode_only          = true;
     uint8_t* input_image_buffer   = NULL;
     uint8_t* control_image_buffer = NULL;
+    uint8_t* mask_image_buffer    = NULL;
+
     if (params.mode == IMG2IMG || params.mode == IMG2VID) {
         vae_decode_only = false;
 
@@ -967,6 +977,18 @@ int main(int argc, const char* argv[]) {
         }
     }
 
+    if (params.mask_path != "") {
+        int c             = 0;
+        mask_image_buffer = stbi_load(params.mask_path.c_str(), &params.width, &params.height, &c, 1);
+    } else {
+        std::vector<uint8_t> arr(params.width * params.height, 255);
+        mask_image_buffer = arr.data();
+    }
+    sd_image_t mask_image = {(uint32_t)params.width,
+                             (uint32_t)params.height,
+                             1,
+                             mask_image_buffer};
+
     sd_image_t* results;
     if (params.mode == TXT2IMG) {
         results = txt2img(sd_ctx,
@@ -1056,6 +1078,7 @@ int main(int argc, const char* argv[]) {
         } else {
             results = img2img(sd_ctx,
                               input_image,
+                              mask_image,
                               params.prompt.c_str(),
                               params.negative_prompt.c_str(),
                               params.clip_skip,
