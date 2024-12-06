@@ -35,6 +35,7 @@ const char* model_version_to_str[] = {
     "SVD",
     "SD3.x",
     "Flux",
+    "Flux Fill",
     "LTX-Video"};
 
 const char* sampling_methods_str[] = {
