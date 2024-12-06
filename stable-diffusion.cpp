@@ -32,6 +32,7 @@ const char* model_version_to_str[] = {
     "SD 2.x",
     "SD 2.x Inpaint",
     "SDXL",
+    "SDXL Inpaint",
     "SVD",
     "SD3.x",
     "Flux",
@@ -336,7 +337,7 @@ public:
                 diffusion_model  = std::make_shared<MMDiTModel>(backend, model_loader.tensor_storages_types);
             } else if (sd_version_is_flux(version)) {
                 cond_stage_model = std::make_shared<FluxCLIPEmbedder>(clip_backend, model_loader.tensor_storages_types);
-                diffusion_model  = std::make_shared<FluxModel>(backend, model_loader.tensor_storages_types, diffusion_flash_attn);
+                diffusion_model  = std::make_shared<FluxModel>(backend, model_loader.tensor_storages_types, version, diffusion_flash_attn);
             } else if (version == VERSION_LTXV) {
                 // TODO: cond for T5 only
                 cond_stage_model = std::make_shared<SimpleT5Embedder>(clip_backend, model_loader.tensor_storages_types);

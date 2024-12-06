@@ -134,8 +134,9 @@ struct FluxModel : public DiffusionModel {
 
     FluxModel(ggml_backend_t backend,
               std::map<std::string, enum ggml_type>& tensor_types,
-              bool flash_attn = false)
-        : flux(backend, tensor_types, "model.diffusion_model", flash_attn) {
+              SDVersion version = VERSION_FLUX,
+              bool flash_attn   = false)
+        : flux(backend, tensor_types, "model.diffusion_model", version, flash_attn) {
     }
 
     void alloc_params_buffer() {
@@ -183,8 +184,8 @@ struct LTXModel : public DiffusionModel {
     Ltx::LTXRunner ltx;
 
     LTXModel(ggml_backend_t backend,
-              std::map<std::string, enum ggml_type>& tensor_types,
-              bool flash_attn   = false)
+             std::map<std::string, enum ggml_type>& tensor_types,
+             bool flash_attn = false)
         : ltx(backend, tensor_types, "model.diffusion_model") {
     }
 
