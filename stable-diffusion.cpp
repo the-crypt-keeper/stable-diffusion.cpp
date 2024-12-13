@@ -816,9 +816,9 @@ public:
 
             } else if (dim == 4) {
                 // 4 channels VAE
-                if (version == VERSION_SDXL) {
+                if (sd_version_is_sdxl(version)) {
                     latent_rgb_proj = sdxl_latent_rgb_proj;
-                } else if (version == VERSION_SD1 || version == VERSION_SD2) {
+                } else if (sd_version_is_sd1(version) || sd_version_is_sd2(version)) {
                     latent_rgb_proj = sd_latent_rgb_proj;
                 } else {
                     // unknown model
@@ -1323,7 +1323,7 @@ sd_image_t* generate_image(sd_ctx_t* sd_ctx,
                            sd_preview_policy_t preview_mode                   = SD_PREVIEW_NONE,
                            int preview_interval                               = 1,
                            std::function<void(int, sd_image_t)> step_callback = nullptr,
-                           ggml_tensor* masked_image                                       = NULL) {
+                           ggml_tensor* masked_image                          = NULL) {
     if (seed < 0) {
         // Generally, when using the provided command line, the seed is always >0.
         // However, to prevent potential issues if 'stable-diffusion.cpp' is invoked as a library
@@ -1757,11 +1757,11 @@ sd_image_t* txt2vid(sd_ctx_t* sd_ctx,
                     int sample_steps,
                     int64_t seed,
                     int batch_count,
-                    int* skip_layers              = NULL,
-                    size_t skip_layers_count      = 0,
-                    float slg_scale               = 0,
-                    float skip_layer_start        = 0.01,
-                    float skip_layer_end          = 0.2) {
+                    int* skip_layers         = NULL,
+                    size_t skip_layers_count = 0,
+                    float slg_scale          = 0,
+                    float skip_layer_start   = 0.01,
+                    float skip_layer_end     = 0.2) {
     std::vector<int> skip_layers_vec(skip_layers, skip_layers + skip_layers_count);
     LOG_DEBUG("txt2vid %dx%d", width, height);
     if (sd_ctx == NULL) {
@@ -1869,7 +1869,7 @@ sd_image_t* img2img(sd_ctx_t* sd_ctx,
                         float v = ggml_tensor_get_f32(masked_image_0, ix, iy, k);
                         ggml_tensor_set_f32(masked_image, v, ix, iy, k);
                     }
-                    // "Encode" 8x8 mask chunks into a flattened 1x64 vector, and concatenate to masked image   
+                    // "Encode" 8x8 mask chunks into a flattened 1x64 vector, and concatenate to masked image
                     for (int x = 0; x < 8; x++) {
                         for (int y = 0; y < 8; y++) {
                             float m = ggml_tensor_get_f32(mask_img, mx + x, my + y);
