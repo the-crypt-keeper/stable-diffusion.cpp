@@ -29,6 +29,7 @@ enum SDVersion {
     VERSION_FLUX,
     VERSION_FLUX_FILL,
     VERSION_LTXV,
+    VERSION_SANA,
     VERSION_COUNT,
 };
 

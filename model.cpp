@@ -1485,7 +1485,10 @@ SDVersion ModelLoader::get_sd_version() {
             if (tensor_storage.name.find("model.diffusion_model.input_blocks.8.0.time_mixer.mix_factor") != std::string::npos) {
                 return VERSION_SVD;
             }
-            if (tensor_storage.name.find("model.diffusion_model.transformer_blocks") != std::string::npos) {
+            if (tensor_storage.name.find("model.diffusion_model.transformer_blocks.0.ff.conv") != std::string::npos) {
+                return VERSION_SANA;
+            }
+            if (tensor_storage.name.find("model.diffusion_model.transformer_blocks.0.ff.net") != std::string::npos) {
                 return VERSION_LTXV;
             }
         }

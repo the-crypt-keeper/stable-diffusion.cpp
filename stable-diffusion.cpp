@@ -37,7 +37,9 @@ const char* model_version_to_str[] = {
     "SD3.x",
     "Flux",
     "Flux Fill",
-    "LTX-Video"};
+    "LTX-Video",
+    "Sana",
+};
 
 const char* sampling_methods_str[] = {
     "Euler A",
@@ -342,6 +344,10 @@ public:
                 // TODO: cond for T5 only
                 cond_stage_model = std::make_shared<SimpleT5Embedder>(clip_backend, model_loader.tensor_storages_types);
                 diffusion_model  = std::make_shared<LTXModel>(backend, model_loader.tensor_storages_types, diffusion_flash_attn);
+            } else if (version == VERSION_SANA) {
+                // TODO: Gemma/Autoregressive Cond stage
+                // cond_stage_model = std::make_shared<>(clip_backend, model_loader.tensor_storages_types);
+                diffusion_model = std::make_shared<LinDiTModel>(backend, model_loader.tensor_storages_types, diffusion_flash_attn);
             } else {
                 if (id_embeddings_path.find("v2") != std::string::npos) {
                     cond_stage_model = std::make_shared<FrozenCLIPEmbedderWithCustomWords>(clip_backend, model_loader.tensor_storages_types, embeddings_path, version, PM_VERSION_2);
@@ -1675,7 +1681,7 @@ sd_image_t* txt2img(sd_ctx_t* sd_ctx,
     if (sd_ctx->sd->stacked_id) {
         params.mem_size += static_cast<size_t>(10 * 1024 * 1024);  // 10 MB
     }
-    if (preview_mode!=SD_PREVIEW_NONE && preview_mode!=SD_PREVIEW_PROJ) {
+    if (preview_mode != SD_PREVIEW_NONE && preview_mode != SD_PREVIEW_PROJ) {
         params.mem_size *= 2;
     }
     params.mem_size += width * height * 3 * sizeof(float);
