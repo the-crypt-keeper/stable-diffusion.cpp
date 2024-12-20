@@ -369,7 +369,7 @@ public:
                 first_stage_model->get_param_tensors(tensors, "first_stage_model");
             }
             if (use_tiny_autoencoder) {
-                tae_first_stage = std::make_shared<TinyAutoEncoder>(backend, model_loader.tensor_storages_types, "decoder.layers", vae_decode_only);
+                tae_first_stage = std::make_shared<TinyAutoEncoder>(backend, model_loader.tensor_storages_types, "decoder.layers", vae_decode_only, version);
             }
             // first_stage_model->get_param_tensors(tensors, "first_stage_model.");
 
