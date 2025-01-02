@@ -41,7 +41,7 @@ const char* sample_method_str[] = {
     "dpm++2m",
     "dpm++2mv2",
     "ipndm",
-    "ipndmv",
+    "ipndm_v",
     "lcm",
 };
 
@@ -52,7 +52,7 @@ const char* schedule_str[] = {
     "karras",
     "exponential",
     "ays",
-    "gits"
+    "gits",
 };
 
 enum SDMode {
